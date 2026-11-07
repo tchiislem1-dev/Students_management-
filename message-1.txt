@@ -1,0 +1,448 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+#define num_of_module 6
+
+typedef struct {
+    char Module[20];
+    float Mark;
+    int coefficient;
+}Grade;
+
+typedef struct Student {
+    long ID;
+    char Last_name[50];
+    char First_name[50];
+    Grade mark_s[num_of_module];
+    float average;
+    struct Student *next;
+    bool passed;
+}Student;
+
+Student* searchid(Student *head, long id) {
+    while (head != NULL) {
+        if (head->ID == id)
+            {return head;}
+        head = head->next;
+    }
+    return NULL;
+}
+
+float average_student(Student *s) {
+    float somme = 0;
+    int total_coef = 0;
+    for (int i = 0; i < num_of_module; i++) {
+        if (s->mark_s[i].Mark >= 0) {
+        somme += s->mark_s[i].Mark * s->mark_s[i].coefficient;
+        total_coef += s->mark_s[i].coefficient;
+    }
+}
+    if (total_coef == 0) {
+        s->average = 0;
+    } else {
+        s->average = somme / total_coef;
+    }
+
+    s->passed = (s->average >= 10);
+    return s->average;
+}
+
+
+Student* add_etudiant(Student *head) {
+    long id;
+    printf("ID : ");
+    if (scanf("%ld", &id) != 1)
+    {
+        printf("Invalid ID.\n");
+        return head;
+    }
+    if ( searchid(head,id) != NULL) {
+        printf("this ID already exists.\n");
+        return head;
+    }
+
+    Student *newstudent = malloc(sizeof(Student));
+
+    if (newstudent == NULL) {
+        printf("Memory allocation failed.\n");
+        return head;
+    }
+    newstudent->ID = id;
+    printf("if there is a space in the name please replace it with _");
+    printf("Last name : ");
+    scanf("%49s", newstudent->Last_name);
+    printf("First name : ");
+    scanf("%49s", newstudent->First_name);
+
+    strcpy(newstudent->mark_s[0].Module, "ALGO");
+    newstudent->mark_s[0].coefficient = 4;
+
+    strcpy(newstudent->mark_s[1].Module, "ANAL");
+    newstudent->mark_s[1].coefficient = 3;
+
+    strcpy(newstudent->mark_s[2].Module, "ISI");
+    newstudent->mark_s[2].coefficient = 3;
+
+    strcpy(newstudent->mark_s[3].Module, "OOP");
+    newstudent->mark_s[3].coefficient = 4;
+
+    strcpy(newstudent->mark_s[4].Module, "ALG");
+    newstudent->mark_s[4].coefficient = 3;
+
+    strcpy(newstudent->mark_s[5].Module, "PROBA");
+    newstudent->mark_s[5].coefficient = 2;
+
+    for (int i = 0; i < num_of_module; i++) {
+        printf("Module %s : ", newstudent->mark_s[i].Module );
+        do {
+            printf("Mark (0-20) : ");
+              while (scanf("%f", &newstudent->mark_s[i].Mark) != 1)
+                {
+                    printf("\nThis is not a number.\n");
+                    printf("Mark (0-20) : ");
+                    scanf("%*s");
+                }
+            if(newstudent->mark_s[i].Mark < 0 || newstudent->mark_s[i].Mark > 20)
+            {
+                printf("Invalid input. Try again.\n");
+            }
+        } while (newstudent->mark_s[i].Mark < 0 || newstudent->mark_s[i].Mark > 20);
+    }
+
+    newstudent->average = average_student(newstudent) ;
+    newstudent->next = NULL;
+
+    if (head == NULL) {return newstudent;}
+    Student *p = head;
+    while (p->next != NULL) p = p->next;
+    p->next = newstudent;
+    return head;
+}
+
+Student *deleteStudent(Student *head, long id) {
+    Student *q = head;
+    Student *p = NULL;
+
+    while (q != NULL && q->ID != id) {
+        p = q;
+        q = q->next;
+    }
+    if (q == NULL) {
+        printf("Student not found.\n");
+        return head;
+    }
+    if (p == NULL) {
+        head = q->next;
+    } else {
+        p->next = q->next;
+    }
+    free(q);
+    printf("Student deleted.\n");
+    return head;
+}
+
+
+void modify(Student *head, long id, char module[]) {
+    Student *s = searchid(head, id);
+    if (s == NULL) {
+        printf("Student not found.\n");
+        return;
+    }
+
+    for (int i = 0; i < num_of_module ; i++) {
+        if (strcmp(s->mark_s[i].Module, module) == 0) {
+            float note;
+            do {
+                printf("New mark (0-20) : ");
+                while (scanf("%f", &note) != 1)
+                {
+                    printf("\nThis is not a number.\n");
+                    printf("New Mark (0-20) : ");
+                    scanf("%*s");
+                }
+
+            } while (note < 0 || note > 20);
+            s->mark_s[i].Mark = note;
+            average_student(s);
+            return;
+        }
+    }
+    printf("Module not found.\n");
+}
+
+void supprimer_note(Student *head, long id, char module[]) {
+    Student *s = searchid(head, id);
+    if (s == NULL) {
+        printf("Student not found.\n");
+        return;
+    }
+
+    for (int i = 0; i < num_of_module; i++) {
+        if (strcmp(s->mark_s[i].Module, module) == 0) {
+            s->mark_s[i].Mark = -1;
+            printf("Grade deleted.\n");
+            s->average=average_student(s);
+            return;
+        }
+    }
+    printf("Module not found.\n");
+}
+
+
+Student *insertionSort(Student *head){
+    Student *sortedHead = NULL;
+    Student *student = head;
+
+    while (student != NULL){
+        Student *nextStudent = student->next;
+        if (sortedHead == NULL || student->average >= sortedHead->average){
+            student->next = sortedHead;
+            sortedHead = student;
+        }
+        else{
+            Student *position = sortedHead;
+            while (position->next != NULL && position->next->average > student->average){
+                position = position->next;
+            }
+            student->next = position->next;
+            position->next = student;
+        }
+        student = nextStudent;
+    }
+    return sortedHead;
+}
+
+void displayStudents_short(Student *head){
+    Student *student_list = head;
+    while (student_list != NULL){
+        printf("\nID: %ld\n", student_list->ID);
+        printf("Last name: %s\n", student_list->Last_name);
+        printf("First name: %s\n", student_list->First_name);
+        printf("Student average: %.2f\n", student_list->average);
+        student_list = student_list->next;
+    }
+}
+
+
+void displayStudents(Student *head){
+    Student *student_list = head;
+    while (student_list != NULL){
+        printf("\nID: %ld\n", student_list->ID);
+        printf("Last name: %s\n", student_list->Last_name);
+        printf("First name: %s\n", student_list->First_name);
+        for (int i = 0; i < num_of_module; i++){
+            if (student_list->mark_s[i].Mark != -1){
+                printf("\nModule: %s\n", student_list->mark_s[i].Module);
+                printf("Mark: %.2f\n", student_list->mark_s[i].Mark);
+                printf("Coefficient: %d\n\n\n", student_list->mark_s[i].coefficient);
+            }
+        }
+        printf("Student average: %.2f\n", student_list->average);
+        student_list = student_list->next;
+    }
+}
+
+void Statistics(Student *head) {
+    float total_average = 0.0f;
+    int student_count = 0;
+    int total_passes = 0;
+    for (Student *student = head; student != NULL; student = student->next) {
+        total_average += student->average;
+        student_count++;
+        if (student->average >= 10.0f) {
+            total_passes++;
+        }
+    }
+
+    printf("\nTotal number of students: %d\n", student_count);
+    if (student_count == 0) {
+        printf("No students.\n");
+        printf("Pass rate: 0.00%%\n");
+        return;
+    }
+    printf("Class average: %.2f\n", total_average / student_count);
+    printf("Pass rate: %.2f%%\n",
+           100.0f * total_passes / student_count);
+}
+
+
+void freeStudents(Student *head){
+    Student *student_list = head;
+
+    while (student_list != NULL){
+
+        Student *nextStudent = student_list->next;
+
+        free(student_list);
+
+        student_list = nextStudent;
+
+    }
+}
+
+void display_passed(Student *head){
+    Student *student_list = head;
+    int i=1;
+    while (student_list != NULL){
+
+        if(student_list->passed == true){
+             printf("   -%d. ID: %ld ,Name: %s %s has passed with an average of %.2f\n",i,student_list->ID,student_list->First_name, student_list->Last_name,student_list->average);
+             i++;
+        }
+        student_list = student_list->next;
+    }
+}
+
+void display_failed(Student *head){
+    Student *student_list = head;
+    int i=1;
+    while (student_list != NULL){
+
+        if(student_list->passed == false){
+                printf("   -%d. ID: %ld ,Name: %s %s has failed with an average of %.2f\n",i,student_list->ID,student_list->First_name, student_list->Last_name,student_list->average);
+                i++;
+        }
+        student_list = student_list->next;
+    }
+}
+
+/*void save_etudiants(Studenthead, const char filename) {
+    FILEfile = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Operation is impossible .\n");
+        return;
+    }
+
+    Student *buffer = head;
+    while (current != NULL) {
+        fprintf(file, "ID: %ld\n", current->ID);
+        fprintf(file, "Last_name: %s\n", buffer->Last_name);
+        fprintf(file, "First_name: %s\n", buffer->First_name);
+        fprintf(file, "Average: %.2f\n", buffer->average);
+        fprintf(file, "Passed: %s\n", buffer->passed );
+
+        for (int i = 0; i < num_of_module; i++) {
+            if (buffer->mark_s[i].Mark >= 0) {
+                fprintf(file, "  Module: %s | Mark: %.2f | Coef: %d\n", buffer->mark_s[i].Module,buffer->mark_s[i].Mark,buffer->mark_s[i].coefficient);
+            }
+        }
+        buffer = buffer->next;
+    }
+
+    fclose(file);
+}
+*/
+int main() {
+    Student *H = NULL;
+    int choice;
+    long ID;
+    char module[15];
+        printf("Empty list do you want to the input first student (Yes/No)\n");
+        scanf("%s",module);
+        if(strcmp(module,"No") == 0 || strcmp(module,"no") == 0)
+        {
+            printf("List is empty nothing to see.\n");
+
+        }
+        if(strcmp(module,"Yes") == 0 || strcmp(module,"yes") == 0){H = add_etudiant(H);}
+        do {
+    printf("\n1. Add a student\n");
+    printf("2. Modify a grade\n");
+    printf("3. Delete a grade\n");
+    printf("4. Show student info\n");
+    printf("5. Calculate a student's average\n");
+    printf("6. Display students who passed\n");
+    printf("7. Display students who failed\n");
+    printf("8. Sort list by average\n");
+    printf("9. Display all students(short)\n");
+    printf("10. Display all students(full)\n");
+    printf("11. Display class statistic\n");
+    printf("12. Delete a student\n");
+    printf("0. Quit\n");
+    printf("Choice: ");
+
+    if (scanf("%d", &choice) != 1) {
+        while (getchar() != '\n') {
+        choice = -1;
+        }
+    }
+if (choice == 1) {
+    H = add_etudiant(H);
+} else if (choice == 2 || choice == 3) {
+    printf("ID: ");
+    scanf("%ld", &ID);
+    printf("Module: ");
+    scanf("%14s", module);
+
+    if (choice == 2)
+        modify(H, ID, module);
+    else
+        supprimer_note(H, ID, module);
+} else if (choice == 4) {
+    printf("ID: ");
+    scanf("%ld", &ID);
+    Student *s = searchid(H, ID);
+    if (s == NULL) {
+        printf("Student not found.\n");
+    } else {
+        printf("Name: %s %s\n", s->First_name, s->Last_name);
+        printf("ID: %ld\n", s->ID);
+
+        for (int i = 0; i < num_of_module; i++) {
+            if(s->mark_s[i].Mark >= 0){
+                printf("%s: %.2f\n",s->mark_s[i].Module, s->mark_s[i].Mark);
+            }
+        }
+    }
+
+} else if (choice == 5) {
+    printf("ID: ");
+    scanf("%ld", &ID);
+    Student *s = searchid(H, ID);
+    if (s == NULL) {
+        printf("Student not found.\n");
+    } else {
+        printf("Average of %s %s: %.2f\n",
+               s->Last_name, s->First_name, average_student(s));
+    }
+
+} else if (choice == 6){
+    printf("Here is the list of students who passed :\n");
+    display_passed(H);
+
+}else if (choice == 7){
+    printf("Here is the list of students who failed :\n");
+    display_failed(H);
+
+}else if (choice == 8) {
+    H=insertionSort(H);
+    displayStudents_short(H);
+}else if (choice == 9) {
+    displayStudents_short(H);
+}else if (choice == 10) {
+    displayStudents(H);
+}else if (choice == 11) {
+    Statistics(H);
+}else if (choice == 12) {
+    printf("ID : ");
+    scanf("%ld", &ID);
+    H=deleteStudent(H,ID);
+}/*else if (choice == 13) {
+    save_etudiants(H,Filename);    //Make this comment part the code to activate the save function to save our list into a file
+                                    //The project did not mention this part so we added in an optional manner
+}
+*/
+else if (choice == 0) {
+    printf("End of program.\n");
+
+} else {
+    printf("Invalid choice.\n");
+}
+} while (choice != 0);
+
+freeStudents(H);
+
+return 0;
+}
